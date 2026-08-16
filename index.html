@@ -84,6 +84,33 @@
       font: inherit;
     }
 
+    .study-range {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .study-range label { color: var(--muted); font-size: .92rem; font-weight: 700; }
+
+    .study-range select {
+      width: 100%;
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .study-range select:focus-visible, .add-word-form input:focus-visible {
+      outline: 3px solid rgba(54, 95, 219, .3);
+      outline-offset: 2px;
+    }
+
     .search:focus, button:focus-visible {
       outline: 3px solid rgba(54, 95, 219, .3);
       outline-offset: 2px;
@@ -192,6 +219,58 @@
 
     .utilities button { min-height: 38px; font-size: .9rem; }
 
+    .custom-words {
+      margin-top: 28px;
+      padding-top: 26px;
+      border-top: 1px solid var(--line);
+    }
+
+    .custom-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .custom-heading h2 { margin: 0; font-size: 1.35rem; }
+    .custom-count { color: var(--muted); font-size: .9rem; font-weight: 700; }
+    .custom-description { margin: 8px 0 14px; color: var(--muted); font-size: .92rem; }
+
+    .add-word-form {
+      display: grid;
+      grid-template-columns: 1fr 1.35fr auto;
+      gap: 8px;
+    }
+
+    .add-word-form input {
+      min-width: 0;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .add-word-form button { min-height: 44px; background: var(--blue); border-color: var(--blue); color: white; }
+    .add-word-form button:hover { background: var(--blue-dark); }
+    .add-word-feedback { min-height: 1.35em; margin: 10px 2px 0; color: var(--muted); font-size: .9rem; font-weight: 700; }
+    .add-word-feedback.success { color: #137234; }
+    .add-word-feedback.error { color: #a12630; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .quiz {
       margin-top: 28px;
       padding-top: 26px;
@@ -273,6 +352,8 @@
       .controls { gap: 7px; }
       button:not(.card) { padding: 8px; font-size: .9rem; }
       .choices { grid-template-columns: 1fr; }
+      .study-range { grid-template-columns: 1fr; gap: 6px; }
+      .add-word-form { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -283,6 +364,18 @@
     <div id="install-tip" class="install-tip" role="status">
       <span>Safari의 공유 버튼에서 <strong>홈 화면에 추가</strong>를 선택하면 앱처럼 사용할 수 있어요.</span>
       <button id="dismiss-install-tip" type="button" aria-label="안내 닫기">닫기</button>
+    </div>
+
+    <div class="study-range">
+      <label for="group-filter">학습 범위</label>
+      <select id="group-filter">
+        <option value="all">전체 보기 (205개)</option>
+        <option value="1-50">1–50</option>
+        <option value="51-100">51–100</option>
+        <option value="101-150">101–150</option>
+        <option value="151-205">151–205</option>
+        <option value="custom" disabled>내가 추가한 단어 (0개)</option>
+      </select>
     </div>
 
     <input id="search" class="search" type="search" placeholder="영단어 또는 뜻 검색" aria-label="영단어 또는 뜻 검색">
@@ -319,6 +412,22 @@
       <button id="shuffle" type="button">순서 섞기</button>
       <button id="reset-search" type="button">검색 초기화</button>
     </div>
+
+    <section class="custom-words" aria-labelledby="custom-words-title">
+      <div class="custom-heading">
+        <h2 id="custom-words-title">내 단어 추가</h2>
+        <span id="custom-word-count" class="custom-count">추가한 단어 0개</span>
+      </div>
+      <p class="custom-description">여기에 추가한 단어는 이 기기에 저장되며, 전체 보기와 내가 추가한 단어에서 확인할 수 있어요.</p>
+      <form id="add-word-form" class="add-word-form">
+        <label class="sr-only" for="custom-english">영어 단어 또는 표현</label>
+        <input id="custom-english" type="text" placeholder="영어 단어 또는 표현" autocomplete="off" required>
+        <label class="sr-only" for="custom-korean">한글 뜻</label>
+        <input id="custom-korean" type="text" placeholder="한글 뜻" autocomplete="off" required>
+        <button type="submit">추가</button>
+      </form>
+      <p id="add-word-feedback" class="add-word-feedback" role="status" aria-live="polite"></p>
+    </section>
 
     <section class="quiz" aria-labelledby="quiz-title">
       <div class="quiz-heading">
@@ -554,7 +663,10 @@
       ["exclusively", "오직, 오로지"]
     ];
 
-    let cards = [...allCards];
+    const customCardsStorageKey = "english-flashcards-custom-cards-v1";
+    let customCards = loadCustomCards();
+    let selectedGroup = "all";
+    let cards = [];
     let index = 0;
     let revealed = false;
 
@@ -572,6 +684,12 @@
     const shuffle = document.getElementById("shuffle");
     const search = document.getElementById("search");
     const resetSearch = document.getElementById("reset-search");
+    const groupFilter = document.getElementById("group-filter");
+    const addWordForm = document.getElementById("add-word-form");
+    const customEnglish = document.getElementById("custom-english");
+    const customKorean = document.getElementById("custom-korean");
+    const customWordCount = document.getElementById("custom-word-count");
+    const addWordFeedback = document.getElementById("add-word-feedback");
     const modeEnKo = document.getElementById("mode-en-ko");
     const modeKoEn = document.getElementById("mode-ko-en");
     const resetTest = document.getElementById("reset-test");
@@ -591,6 +709,73 @@
     const scoreStorageKey = "english-flashcards-score-v1";
     const installTipStorageKey = "english-flashcards-install-tip-dismissed-v1";
 
+    function loadCustomCards() {
+      try {
+        const savedCards = JSON.parse(localStorage.getItem(customCardsStorageKey));
+        if (!Array.isArray(savedCards)) return [];
+
+        return savedCards
+          .filter((card) => Array.isArray(card) && typeof card[0] === "string" && typeof card[1] === "string")
+          .map(([english, korean]) => [english.trim(), korean.trim()])
+          .filter(([english, korean]) => english && korean);
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveCustomCards() {
+      try {
+        localStorage.setItem(customCardsStorageKey, JSON.stringify(customCards));
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function getSelectedDeck() {
+      switch (selectedGroup) {
+        case "1-50": return allCards.slice(0, 50);
+        case "51-100": return allCards.slice(50, 100);
+        case "101-150": return allCards.slice(100, 150);
+        case "151-205": return allCards.slice(150, 205);
+        case "custom": return [...customCards];
+        default: return [...allCards, ...customCards];
+      }
+    }
+
+    function getGroupLabel() {
+      const count = getSelectedDeck().length;
+      const labels = {
+        "1-50": "1–50",
+        "51-100": "51–100",
+        "101-150": "101–150",
+        "151-205": "151–205",
+        "custom": "내가 추가한 단어"
+      };
+      return selectedGroup === "all" ? `전체 ${count}개` : `${labels[selectedGroup]} ${count}개`;
+    }
+
+    function updateGroupControls() {
+      groupFilter.querySelector('option[value="all"]').textContent = `전체 보기 (${allCards.length + customCards.length}개)`;
+      groupFilter.querySelector('option[value="custom"]').textContent = `내가 추가한 단어 (${customCards.length}개)`;
+      groupFilter.querySelector('option[value="custom"]').disabled = customCards.length === 0;
+      customWordCount.textContent = `추가한 단어 ${customCards.length}개`;
+
+      if (selectedGroup === "custom" && customCards.length === 0) selectedGroup = "all";
+      groupFilter.value = selectedGroup;
+    }
+
+    function applyActiveFilter() {
+      const query = search.value.trim().toLowerCase();
+      cards = getSelectedDeck().filter(([english, korean]) =>
+        english.toLowerCase().includes(query) || korean.toLowerCase().includes(query)
+      );
+      index = 0;
+      revealed = false;
+      render();
+      newQuizQuestion();
+    }
+
     function render() {
       const hasCards = cards.length > 0;
       card.hidden = !hasCards;
@@ -598,7 +783,7 @@
 
       if (!hasCards) {
         position.textContent = "0 / 0";
-        total.textContent = `전체 ${allCards.length}개`;
+        total.textContent = search.value.trim() ? `검색 결과 0개 · ${getGroupLabel()}` : getGroupLabel();
         [toggle, previous, next, random, shuffle].forEach((button) => button.disabled = true);
         return;
       }
@@ -611,7 +796,7 @@
       toggle.textContent = revealed ? "단어 보기" : "정답 보기";
       card.setAttribute("aria-label", revealed ? "카드를 뒤집어 단어 보기" : "카드를 뒤집어 뜻 보기");
       position.textContent = `${index + 1} / ${cards.length}`;
-      total.textContent = search.value ? `검색 결과 ${cards.length}개` : `전체 ${allCards.length}개`;
+      total.textContent = search.value.trim() ? `검색 결과 ${cards.length}개 · ${getGroupLabel()}` : getGroupLabel();
     }
 
     function flip() {
@@ -684,14 +869,26 @@
     }
 
     function newQuizQuestion() {
-      const [english, korean] = allCards[Math.floor(Math.random() * allCards.length)];
+      if (!cards.length) {
+        quiz = null;
+        quizLabel.textContent = testMode === "en-ko" ? "영어의 뜻을 고르세요" : "한글에 알맞은 영어 표현을 고르세요";
+        quizQuestion.textContent = "학습할 단어가 없습니다.";
+        choices.innerHTML = "";
+        quizFeedback.textContent = "다른 학습 범위를 선택하거나 검색어를 지워 보세요.";
+        quizFeedback.className = "quiz-feedback";
+        nextQuestion.disabled = true;
+        return;
+      }
+
+      const [english, korean] = cards[Math.floor(Math.random() * cards.length)];
       const questionIndex = testMode === "en-ko" ? 0 : 1;
       const answerIndex = testMode === "en-ko" ? 1 : 0;
       const answer = answerIndex === 0 ? english : korean;
       const options = new Set([answer]);
+      const optionSource = getSelectedDeck().length >= 4 ? getSelectedDeck() : [...allCards, ...customCards];
 
       while (options.size < 4) {
-        const candidate = allCards[Math.floor(Math.random() * allCards.length)][answerIndex];
+        const candidate = optionSource[Math.floor(Math.random() * optionSource.length)][answerIndex];
         options.add(candidate);
       }
 
@@ -754,6 +951,41 @@
       newQuizQuestion();
     }
 
+    function setAddWordFeedback(message, type = "") {
+      addWordFeedback.textContent = message;
+      addWordFeedback.className = `add-word-feedback ${type}`;
+    }
+
+    function addCustomWord(event) {
+      event.preventDefault();
+      const english = customEnglish.value.trim();
+      const korean = customKorean.value.trim();
+
+      if (!english || !korean) {
+        setAddWordFeedback("영어와 한글 뜻을 모두 입력해 주세요.", "error");
+        return;
+      }
+
+      const isDuplicate = customCards.some(([savedEnglish, savedKorean]) =>
+        savedEnglish.toLowerCase() === english.toLowerCase() && savedKorean === korean
+      );
+      if (isDuplicate) {
+        setAddWordFeedback("이미 추가한 단어입니다.", "error");
+        return;
+      }
+
+      customCards = [...customCards, [english, korean]];
+      const saved = saveCustomCards();
+      updateGroupControls();
+      applyActiveFilter();
+      addWordForm.reset();
+      customEnglish.focus();
+      setAddWordFeedback(
+        saved ? `“${english}”을(를) 추가했습니다.` : `“${english}”을(를) 추가했지만 이 기기에 저장하지 못했습니다.`,
+        saved ? "success" : "error"
+      );
+    }
+
     card.addEventListener("click", flip);
     toggle.addEventListener("click", flip);
     previous.addEventListener("click", () => move(-1));
@@ -767,6 +999,11 @@
       render();
     });
     shuffle.addEventListener("click", shuffleCards);
+    groupFilter.addEventListener("change", () => {
+      selectedGroup = groupFilter.value;
+      applyActiveFilter();
+    });
+    addWordForm.addEventListener("submit", addCustomWord);
     modeEnKo.addEventListener("click", () => changeTestMode("en-ko"));
     modeKoEn.addEventListener("click", () => changeTestMode("ko-en"));
     resetTest.addEventListener("click", () => {
@@ -785,22 +1022,11 @@
       }
     });
 
-    search.addEventListener("input", () => {
-      const query = search.value.trim().toLowerCase();
-      cards = allCards.filter(([english, korean]) =>
-        english.toLowerCase().includes(query) || korean.toLowerCase().includes(query)
-      );
-      index = 0;
-      revealed = false;
-      render();
-    });
+    search.addEventListener("input", applyActiveFilter);
 
     resetSearch.addEventListener("click", () => {
       search.value = "";
-      cards = [...allCards];
-      index = 0;
-      revealed = false;
-      render();
+      applyActiveFilter();
       search.focus();
     });
 
@@ -816,9 +1042,9 @@
 
     setupInstallTip();
     restoreTestScore();
-    render();
+    updateGroupControls();
+    applyActiveFilter();
     updateTestScore();
-    newQuizQuestion();
 
     if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
       window.addEventListener("load", () => {
