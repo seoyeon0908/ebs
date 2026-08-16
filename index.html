@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#365fdb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="영단어 카드">
+  <title>영단어 플래시카드</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #667085;
+      --blue: #365fdb;
+      --blue-dark: #2449b8;
+      --surface: #ffffff;
+      --line: #dfe5f2;
+      --bg: #f3f6fc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px 16px;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top left, #dfe9ff, transparent 38%), var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      width: min(100%, 680px);
+      padding: 28px;
+      border: 1px solid rgba(255, 255, 255, .75);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .84);
+      box-shadow: 0 18px 50px rgba(50, 76, 140, .16);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 { margin: 0; font-size: clamp(1.65rem, 5vw, 2.2rem); }
+    .subtitle { margin: 8px 0 22px; color: var(--muted); }
+
+    .install-tip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: -8px 0 18px;
+      padding: 11px 12px 11px 14px;
+      border: 1px solid #cdd9fb;
+      border-radius: 12px;
+      background: #f2f5ff;
+      color: #294a9a;
+      font-size: .88rem;
+      line-height: 1.45;
+    }
+
+    .install-tip[hidden] { display: none; }
+    .install-tip button {
+      flex: 0 0 auto;
+      min-height: 32px !important;
+      padding: 5px 8px !important;
+      border-color: #c0cdf1 !important;
+      background: white !important;
+      color: #294a9a !important;
+      font-size: .8rem !important;
+    }
+
+    .search {
+      width: 100%;
+      margin-bottom: 20px;
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      font: inherit;
+    }
+
+    .search:focus, button:focus-visible {
+      outline: 3px solid rgba(54, 95, 219, .3);
+      outline-offset: 2px;
+    }
+
+    .progress {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 2px 10px;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .card-area { perspective: 1100px; }
+
+    .card {
+      width: 100%;
+      min-height: 270px;
+      padding: 0;
+      position: relative;
+      border: 0;
+      border-radius: 20px;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform .45s ease;
+      background: transparent;
+      text-align: inherit;
+    }
+
+    .card.is-flipped { transform: rotateY(180deg); }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 16px;
+      padding: 30px;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      box-shadow: 0 14px 30px rgba(36, 73, 184, .16);
+    }
+
+    .front {
+      background: linear-gradient(135deg, #446de2, #2449b8);
+      color: white;
+    }
+
+    .back {
+      transform: rotateY(180deg);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .side-label {
+      margin: 0;
+      font-size: .78rem;
+      font-weight: 750;
+      letter-spacing: .12em;
+      opacity: .78;
+    }
+
+    .word, .meaning {
+      margin: 0;
+      overflow-wrap: anywhere;
+      text-align: center;
+    }
+
+    .word { font-size: clamp(1.8rem, 7vw, 3rem); font-weight: 800; }
+    .meaning { font-size: clamp(1.3rem, 4.5vw, 2rem); font-weight: 700; line-height: 1.45; }
+    .hint { margin: 0; font-size: .88rem; opacity: .76; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button:not(.card) {
+      min-height: 46px;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:not(.card):hover { border-color: #b9c8ef; background: #f8faff; }
+    #toggle { background: var(--blue); border-color: var(--blue); color: white; }
+    #toggle:hover { background: var(--blue-dark); }
+
+    .utilities {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .utilities button { min-height: 38px; font-size: .9rem; }
+
+    .quiz {
+      margin-top: 28px;
+      padding-top: 26px;
+      border-top: 1px solid var(--line);
+    }
+
+    .quiz-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .quiz h2 { margin: 0; font-size: 1.35rem; }
+    .quiz-description { margin: 0 0 14px; color: var(--muted); }
+
+    .mode-controls, .quiz-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mode-controls { margin-bottom: 14px; }
+    .mode-controls button { min-height: 40px; }
+    .mode-controls button.is-selected { border-color: var(--blue); background: #eef2ff; color: var(--blue-dark); }
+
+    .quiz-card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f8faff;
+    }
+
+    .quiz-label { margin: 0 0 6px; color: var(--muted); font-size: .85rem; font-weight: 700; }
+    .quiz-question { margin: 0; font-size: clamp(1.45rem, 5vw, 2.2rem); font-weight: 800; overflow-wrap: anywhere; }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .choice {
+      min-height: 66px !important;
+      padding: 12px !important;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+
+    .choice.is-correct { border-color: #16803c !important; background: #e8f8ec !important; color: #135e2f !important; }
+    .choice.is-wrong { border-color: #bd3741 !important; background: #ffedef !important; color: #972b33 !important; }
+    .choice:disabled { cursor: default; opacity: 1; }
+
+    .quiz-footer { align-items: center; margin-top: 14px; }
+    .quiz-feedback { flex: 1 1 180px; margin: 0; color: var(--muted); font-weight: 700; }
+    .quiz-feedback.correct { color: #137234; }
+    .quiz-feedback.wrong { color: #a12630; }
+    #next-question { min-height: 42px; background: var(--blue); border-color: var(--blue); color: white; }
+    #next-question:hover { background: var(--blue-dark); }
+
+    .empty {
+      min-height: 270px;
+      display: grid;
+      place-items: center;
+      padding: 30px;
+      border: 1px dashed #b8c5e4;
+      border-radius: 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty[hidden] { display: none; }
+
+    @media (max-width: 420px) {
+      body { padding: 16px 10px; }
+      .app { padding: 20px 16px; border-radius: 18px; }
+      .controls { gap: 7px; }
+      button:not(.card) { padding: 8px; font-size: .9rem; }
+      .choices { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>영단어 플래시카드</h1>
+    <p class="subtitle">카드를 클릭하거나 <strong>정답 보기</strong>를 누르면 뜻이 보입니다.</p>
+    <div id="install-tip" class="install-tip" role="status">
+      <span>Safari의 공유 버튼에서 <strong>홈 화면에 추가</strong>를 선택하면 앱처럼 사용할 수 있어요.</span>
+      <button id="dismiss-install-tip" type="button" aria-label="안내 닫기">닫기</button>
+    </div>
+
+    <input id="search" class="search" type="search" placeholder="영단어 또는 뜻 검색" aria-label="영단어 또는 뜻 검색">
+
+    <div class="progress">
+      <span id="position">1 / 205</span>
+      <span id="total">전체 205개</span>
+    </div>
+
+    <div id="card-area" class="card-area">
+      <button id="flashcard" class="card" type="button" aria-label="카드를 뒤집어 뜻 보기">
+        <span class="face front">
+          <span class="side-label">ENGLISH</span>
+          <span id="word" class="word"></span>
+          <span class="hint">클릭해서 뜻 보기</span>
+        </span>
+        <span class="face back">
+          <span class="side-label">뜻</span>
+          <span id="meaning" class="meaning"></span>
+          <span class="hint">클릭해서 단어 보기</span>
+        </span>
+      </button>
+      <div id="empty" class="empty" hidden>검색 결과가 없습니다.<br>다른 검색어를 입력해 보세요.</div>
+    </div>
+
+    <div class="controls">
+      <button id="previous" type="button">← 이전</button>
+      <button id="toggle" type="button">정답 보기</button>
+      <button id="next" type="button">다음 →</button>
+    </div>
+
+    <div class="utilities">
+      <button id="random" type="button">무작위 카드</button>
+      <button id="shuffle" type="button">순서 섞기</button>
+      <button id="reset-search" type="button">검색 초기화</button>
+    </div>
+
+    <section class="quiz" aria-labelledby="quiz-title">
+      <div class="quiz-heading">
+        <h2 id="quiz-title">테스트</h2>
+        <span id="test-score">정답 0 / 0</span>
+      </div>
+      <p class="quiz-description">알맞은 뜻 또는 영어 표현을 골라 보세요.</p>
+
+      <div class="mode-controls" role="group" aria-label="테스트 방향">
+        <button id="mode-en-ko" class="is-selected" type="button">영어 → 한글</button>
+        <button id="mode-ko-en" type="button">한글 → 영어</button>
+        <button id="reset-test" type="button">점수 초기화</button>
+      </div>
+
+      <div class="quiz-card">
+        <p id="quiz-label" class="quiz-label">영어의 뜻을 고르세요</p>
+        <p id="quiz-question" class="quiz-question"></p>
+        <div id="choices" class="choices" aria-live="polite"></div>
+        <div class="quiz-footer">
+          <p id="quiz-feedback" class="quiz-feedback">정답 하나를 선택하세요.</p>
+          <button id="next-question" type="button" disabled>다음 문제</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const allCards = [
+      ["address", "대상으로 하다, 다루다"],
+      ["bank", "경사지게 하다"],
+      ["house", "수용하다"],
+      ["coin", "(새로운 낱말, 어구를) 만들어내다"],
+      ["weight", "가중치를 부여하다"],
+      ["bubble", "올리다"],
+      ["term", "일컫다"],
+      ["score", "작곡하다"],
+      ["channel", "(관심, 노력 등을 어떤 방향으로) 쏟다, 돌리다"],
+      ["screen", "선별하다"],
+      ["file", "(소송, 신청 등을) 제기하다"],
+      ["fashion", "만들다"],
+      ["ease", "덜어주다"],
+      ["pound", "두근거리다, 치다"],
+      ["rock", "뒤흔들다"],
+      ["last", "지속되다"],
+      ["credit ~ with ...", "…을 ~의 덕분으로 여기다"],
+      ["channel", "통로"],
+      ["affect", "정서, 감정"],
+      ["cause", "대의명분"],
+      ["draw", "(무작위) 추첨"],
+      ["flight", "도망"],
+      ["content", "함량, 함유량, 내용물"],
+      ["credit ①", "공, 칭찬"],
+      ["credit ②", "대출, 대출금"],
+      ["end", "목적"],
+      ["chance", "우연"],
+      ["string", "연속"],
+      ["mass", "다수, 대부분"],
+      ["number", "(사람들의) 무리, 집단"],
+      ["presence", "인력, 주둔군"],
+      ["entry", "응시자 수, 응시"],
+      ["offence", "불쾌함, 모욕"],
+      ["agency", "주체성, 힘"],
+      ["lead", "잠재 고객"],
+      ["discipline", "학문 분야"],
+      ["power", "(신적인) 존재"],
+      ["negative", "(사진의) 원판"],
+      ["subject ①", "신하, 부하"],
+      ["subject ②", "연구 대상, 피실험자"],
+      ["party", "정당"],
+      ["attribute", "속성, 특성"],
+      ["gut", "직감"],
+      ["resolution", "해상도"],
+      ["frequency", "주파수"],
+      ["rotation", "자전"],
+      ["population", "개체군"],
+      ["deduction", "추론"],
+      ["coverage", "취급 범위, 다루는 범위"],
+      ["accounting", "회계학"],
+      ["agent", "행위자"],
+      ["attachment", "애착"],
+      ["construct", "구성, 개념, 생각"],
+      ["variable", "변수"],
+      ["scatter", "산포도"],
+      ["referent", "지시 대상"],
+      ["well", "우물"],
+      ["serving", "1인분"],
+      ["tip", "끝"],
+      ["meter", "박자"],
+      ["myth", "근거 없는 믿음"],
+      ["net return", "순수익"],
+      ["the arts", "인문 예술"],
+      ["the beyond", "저승, 내세"],
+      ["critical", "중대한, 중요한"],
+      ["positive", "과잉의, 양(성)의"],
+      ["hold", "주장하다, 생각하다"],
+      ["maintain", "주장하다"],
+      ["browse", "뜯어먹다"],
+      ["run", "운영하다"],
+      ["cover", "다루다"],
+      ["suspect", "~일 것이라고 생각하다"],
+      ["depress", "하락시키다, 떨어뜨리다, 억제하다"],
+      ["entertain", "받아들이다"],
+      ["discount", "고려하지 않다, 무시하다"],
+      ["assume", "취하다"],
+      ["exercise", "행사하다"],
+      ["count ①", "(정식으로) 인정되다"],
+      ["count ②", "중요하다"],
+      ["attract", "끌어당기다"],
+      ["locate ①", "찾다"],
+      ["locate ②", "찾아내다"],
+      ["underscore", "강조하다"],
+      ["offend", "위반하다, 범죄를 저지르다"],
+      ["mean", "심술궂은, 못된"],
+      ["encode", "표현하다"],
+      ["punctuate", "간간이 끼어들다"],
+      ["iron", "굳은"],
+      ["net", "(돈의 액수에 대해) 순"],
+      ["novel", "새로운"],
+      ["modest", "대단하지 않은"],
+      ["loose", "포장되지 않은"],
+      ["floating", "유동적인"],
+      ["relevant", "중요한, 유의미한"],
+      ["cultured ①", "배양한"],
+      ["cultured ②", "교양 있는"],
+      ["homely", "흔한"],
+      ["occupied", "바쁜"],
+      ["stationary", "정지해 있는"],
+      ["exclusive", "전용의, 독점적인"],
+      ["demanding", "부담이 큰, 힘든"],
+      ["dead-end", "발전 가능성이 없는"],
+      ["flat", "정체된, 변동 없는"],
+      ["plain", "완전히, 분명히"],
+      ["save", "~을 제외하고"],
+      ["provided", "만약 ~라면"],
+      ["break down", "~를 나누다"],
+      ["take up", "~를 다시 시작하다"],
+      ["trail off", "점점 감소하다"],
+      ["strike up", "(대화, 관계 등을) 시작하다"],
+      ["tap into", "~을 이용하다"],
+      ["play out", "전개되다, 진행되다"],
+      ["bear out", "~을 입증하다"],
+      ["give out", "멈추다, 정지하다"],
+      ["rub off on", "~로 옮겨오다"],
+      ["yield to", "~으로 대체되다"],
+      ["hold up", "~을 방해하다"],
+      ["hold back", "~을 가로막다"],
+      ["brush off", "~을 무시하다"],
+      ["give way to", "~로 바뀌다"],
+      ["ride out", "~을 잘 견디다, ~에서 빠져나오다"],
+      ["work around", "~를 피하며 일하다"],
+      ["hit on", "~을 생각해내다"],
+      ["leave out", "~을 배제하다"],
+      ["air out", "~을 환기시키다"],
+      ["take ~ off", "~을 휴가를 내다"],
+      ["go about", "~을 시작하다"],
+      ["come across as", "~라는 인상을 주다"],
+      ["account for ①", "~를 고려하다"],
+      ["account for ②", "~를 차지하다"],
+      ["shed/cast light on", "~을 설명하다, ~을 더 쉽게 이해하게 해 주다"],
+      ["stop short of", "~하는 데까지 가지 않다, ~하기 직전에 멈추다"],
+      ["call upon", "~을 요구하다"],
+      ["get around to -ing", "마침내 ~하게 되다, ~할 시간을 내다"],
+      ["balance ~ against ...", "~과 …을 비교하다"],
+      ["arm ~ with ...", "~에게 …을 갖추게 하다"],
+      ["think nothing of", "~을 아무렇지도 않게 생각하다"],
+      ["out of the blue", "갑자기"],
+      ["fingers crossed", "부디 잘되길 바라다"],
+      ["few and far between", "아주 드문"],
+      ["in the heat of the moment", "발끈해서 그만"],
+      ["take ~ at face value", "~을 곧이곧대로 받아들이다"],
+      ["be on the fence", "형세를 관망하다"],
+      ["sweeten the pot", "당근을 제시하다, 더 매력적인 대안을 제시하다"],
+      ["the order of the day", "가장 중요한 과제"],
+      ["bottom line", "핵심"],
+      ["high stakes", "중요한 일"],
+      ["rise to the challenge", "난제에 잘 대처하다, 임기응변으로 처리하다"],
+      ["rub ~ the wrong way", "(말이나 행동을 잘못하여 의도치 않게) ~을 불쾌하게 만들다"],
+      ["at will", "마음대로"],
+      ["along the lines of", "~과 비슷한"],
+      ["as it were", "이를테면, 말하자면"],
+      ["more often than not", "대개, 십중팔구"],
+      ["nothing but", "다름 아닌 ~"],
+      ["all but", "거의"],
+      ["up front", "솔직하게"],
+      ["at hand", "당면한"],
+      ["at a price", "상당한 가격에, 상당한 비용을 들여"],
+      ["in question", "문제의, 논의가 되고 있는"],
+      ["aptly put", "적절히 표현하자면"],
+      ["make the leap", "과감한 결정을 내리다"],
+      ["land a job", "직장을 구하다"],
+      ["be party to", "~에 관여하다"],
+      ["be subject to", "~을 받기 쉽다"],
+      ["better than even", "절반이 넘는, 50%를 초과하는"],
+      ["hold true", "진실이다"],
+      ["step change", "큰 변화"],
+      ["personal touch", "인간적인 느낌"],
+      ["make it", "해내다, 성공하다"],
+      ["go a long way", "크게 도움이 되다"],
+      ["follow suit", "따라 하다"],
+      ["feature film", "장편 영화"],
+      ["board member", "임원"],
+      ["public relations", "홍보 활동"],
+      ["hands-on", "실습 중심의, 직접 해보는"],
+      ["pitiless", "무자비한"],
+      ["expendable", "쉽게 희생할 수 있는, 소모성의"],
+      ["unintelligible", "이해할 수 없는"],
+      ["disquieting", "마음을 어지럽히는, 불안하게 하는"],
+      ["prescriptive", "규범적인"],
+      ["phenomenal", "경이적인"],
+      ["breathable", "(옷감 등이) 통기성이 있는"],
+      ["unthought", "무의식적인"],
+      ["run-down", "황폐한, 쇠퇴한"],
+      ["well-worn", "진부한"],
+      ["longhand", "손으로 쓴"],
+      ["jawbreaker", "알사탕"],
+      ["colonizer", "본토에서 식민지로 이주한 사람"],
+      ["filler word", "군더더기 말"],
+      ["flavor profile", "맛의 구성, 맛의 특징"],
+      ["call-out", "도움을 구하는 글, 공개적인 요청"],
+      ["insistence", "고집"],
+      ["escalate", "점점 심해지다, 악화되다"],
+      ["entail", "수반하다, 의미하다"],
+      ["outwit", "한 수 앞서다"],
+      ["outcompete", "이기다, 앞서다"],
+      ["weathering", "풍화"],
+      ["repurpose", "재활용하다"],
+      ["contested", "논란이 있는"],
+      ["one-up", "한발 앞선, 한 수 위의"],
+      ["unmet", "충족되지 않은"],
+      ["sought-after", "많은 사람들이 원하는, 인기 있는"],
+      ["downright", "매우, 아주"],
+      ["affective", "감정적인, 정서적인, 감정의"],
+      ["exclusively", "오직, 오로지"]
+    ];
+
+    let cards = [...allCards];
+    let index = 0;
+    let revealed = false;
+
+    const card = document.getElementById("flashcard");
+    const cardArea = document.getElementById("card-area");
+    const empty = document.getElementById("empty");
+    const word = document.getElementById("word");
+    const meaning = document.getElementById("meaning");
+    const position = document.getElementById("position");
+    const total = document.getElementById("total");
+    const toggle = document.getElementById("toggle");
+    const previous = document.getElementById("previous");
+    const next = document.getElementById("next");
+    const random = document.getElementById("random");
+    const shuffle = document.getElementById("shuffle");
+    const search = document.getElementById("search");
+    const resetSearch = document.getElementById("reset-search");
+    const modeEnKo = document.getElementById("mode-en-ko");
+    const modeKoEn = document.getElementById("mode-ko-en");
+    const resetTest = document.getElementById("reset-test");
+    const quizLabel = document.getElementById("quiz-label");
+    const quizQuestion = document.getElementById("quiz-question");
+    const choices = document.getElementById("choices");
+    const quizFeedback = document.getElementById("quiz-feedback");
+    const nextQuestion = document.getElementById("next-question");
+    const testScore = document.getElementById("test-score");
+    const installTip = document.getElementById("install-tip");
+    const dismissInstallTip = document.getElementById("dismiss-install-tip");
+
+    let testMode = "en-ko";
+    let correctAnswers = 0;
+    let answeredQuestions = 0;
+    let quiz = null;
+    const scoreStorageKey = "english-flashcards-score-v1";
+    const installTipStorageKey = "english-flashcards-install-tip-dismissed-v1";
+
+    function render() {
+      const hasCards = cards.length > 0;
+      card.hidden = !hasCards;
+      empty.hidden = hasCards;
+
+      if (!hasCards) {
+        position.textContent = "0 / 0";
+        total.textContent = `전체 ${allCards.length}개`;
+        [toggle, previous, next, random, shuffle].forEach((button) => button.disabled = true);
+        return;
+      }
+
+      [toggle, previous, next, random, shuffle].forEach((button) => button.disabled = false);
+      const [currentWord, currentMeaning] = cards[index];
+      word.textContent = currentWord;
+      meaning.textContent = currentMeaning;
+      card.classList.toggle("is-flipped", revealed);
+      toggle.textContent = revealed ? "단어 보기" : "정답 보기";
+      card.setAttribute("aria-label", revealed ? "카드를 뒤집어 단어 보기" : "카드를 뒤집어 뜻 보기");
+      position.textContent = `${index + 1} / ${cards.length}`;
+      total.textContent = search.value ? `검색 결과 ${cards.length}개` : `전체 ${allCards.length}개`;
+    }
+
+    function flip() {
+      if (!cards.length) return;
+      revealed = !revealed;
+      render();
+    }
+
+    function move(step) {
+      if (!cards.length) return;
+      index = (index + step + cards.length) % cards.length;
+      revealed = false;
+      render();
+    }
+
+    function shuffleCards() {
+      for (let i = cards.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+      }
+      index = 0;
+      revealed = false;
+      render();
+    }
+
+    function mix(items) {
+      const mixed = [...items];
+      for (let i = mixed.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
+      }
+      return mixed;
+    }
+
+    function updateTestScore() {
+      testScore.textContent = `정답 ${correctAnswers} / ${answeredQuestions}`;
+      try {
+        localStorage.setItem(scoreStorageKey, JSON.stringify({ correctAnswers, answeredQuestions }));
+      } catch (_) {
+        // Storage can be unavailable in private browsing; the quiz still works for this session.
+      }
+    }
+
+    function restoreTestScore() {
+      try {
+        const savedScore = JSON.parse(localStorage.getItem(scoreStorageKey));
+        if (
+          Number.isInteger(savedScore?.correctAnswers) &&
+          Number.isInteger(savedScore?.answeredQuestions) &&
+          savedScore.correctAnswers >= 0 &&
+          savedScore.answeredQuestions >= savedScore.correctAnswers
+        ) {
+          correctAnswers = savedScore.correctAnswers;
+          answeredQuestions = savedScore.answeredQuestions;
+        }
+      } catch (_) {
+        // Ignore unreadable saved data and start with a fresh score.
+      }
+    }
+
+    function setupInstallTip() {
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+      try {
+        if (isStandalone || localStorage.getItem(installTipStorageKey) === "dismissed") {
+          installTip.hidden = true;
+        }
+      } catch (_) {
+        if (isStandalone) installTip.hidden = true;
+      }
+    }
+
+    function newQuizQuestion() {
+      const [english, korean] = allCards[Math.floor(Math.random() * allCards.length)];
+      const questionIndex = testMode === "en-ko" ? 0 : 1;
+      const answerIndex = testMode === "en-ko" ? 1 : 0;
+      const answer = answerIndex === 0 ? english : korean;
+      const options = new Set([answer]);
+
+      while (options.size < 4) {
+        const candidate = allCards[Math.floor(Math.random() * allCards.length)][answerIndex];
+        options.add(candidate);
+      }
+
+      quiz = {
+        answer,
+        answered: false,
+        options: mix([...options])
+      };
+
+      quizLabel.textContent = testMode === "en-ko" ? "영어의 뜻을 고르세요" : "한글에 알맞은 영어 표현을 고르세요";
+      quizQuestion.textContent = questionIndex === 0 ? english : korean;
+      choices.innerHTML = "";
+      quizFeedback.textContent = "정답 하나를 선택하세요.";
+      quizFeedback.className = "quiz-feedback";
+      nextQuestion.disabled = true;
+
+      quiz.options.forEach((option) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice";
+        button.textContent = option;
+        button.addEventListener("click", () => answerQuiz(button, option));
+        choices.appendChild(button);
+      });
+    }
+
+    function answerQuiz(selectedButton, selectedAnswer) {
+      if (!quiz || quiz.answered) return;
+      quiz.answered = true;
+      answeredQuestions += 1;
+      const isCorrect = selectedAnswer === quiz.answer;
+
+      [...choices.children].forEach((button) => {
+        button.disabled = true;
+        if (button.textContent === quiz.answer) button.classList.add("is-correct");
+      });
+
+      if (isCorrect) {
+        correctAnswers += 1;
+        quizFeedback.textContent = "정답입니다!";
+        quizFeedback.className = "quiz-feedback correct";
+      } else {
+        selectedButton.classList.add("is-wrong");
+        quizFeedback.textContent = `정답: ${quiz.answer}`;
+        quizFeedback.className = "quiz-feedback wrong";
+      }
+
+      updateTestScore();
+      nextQuestion.disabled = false;
+      nextQuestion.focus();
+    }
+
+    function changeTestMode(mode) {
+      testMode = mode;
+      correctAnswers = 0;
+      answeredQuestions = 0;
+      modeEnKo.classList.toggle("is-selected", mode === "en-ko");
+      modeKoEn.classList.toggle("is-selected", mode === "ko-en");
+      updateTestScore();
+      newQuizQuestion();
+    }
+
+    card.addEventListener("click", flip);
+    toggle.addEventListener("click", flip);
+    previous.addEventListener("click", () => move(-1));
+    next.addEventListener("click", () => move(1));
+    random.addEventListener("click", () => {
+      if (cards.length < 2) return;
+      let newIndex = index;
+      while (newIndex === index) newIndex = Math.floor(Math.random() * cards.length);
+      index = newIndex;
+      revealed = false;
+      render();
+    });
+    shuffle.addEventListener("click", shuffleCards);
+    modeEnKo.addEventListener("click", () => changeTestMode("en-ko"));
+    modeKoEn.addEventListener("click", () => changeTestMode("ko-en"));
+    resetTest.addEventListener("click", () => {
+      correctAnswers = 0;
+      answeredQuestions = 0;
+      updateTestScore();
+      newQuizQuestion();
+    });
+    nextQuestion.addEventListener("click", newQuizQuestion);
+    dismissInstallTip.addEventListener("click", () => {
+      installTip.hidden = true;
+      try {
+        localStorage.setItem(installTipStorageKey, "dismissed");
+      } catch (_) {
+        // The tip remains hidden until this page is reloaded.
+      }
+    });
+
+    search.addEventListener("input", () => {
+      const query = search.value.trim().toLowerCase();
+      cards = allCards.filter(([english, korean]) =>
+        english.toLowerCase().includes(query) || korean.toLowerCase().includes(query)
+      );
+      index = 0;
+      revealed = false;
+      render();
+    });
+
+    resetSearch.addEventListener("click", () => {
+      search.value = "";
+      cards = [...allCards];
+      index = 0;
+      revealed = false;
+      render();
+      search.focus();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (["INPUT", "BUTTON"].includes(event.target.tagName) || event.target.isContentEditable) return;
+      if (event.key === "ArrowLeft") move(-1);
+      if (event.key === "ArrowRight") move(1);
+      if (event.key === " " || event.key === "Enter") {
+        event.preventDefault();
+        flip();
+      }
+    });
+
+    setupInstallTip();
+    restoreTestScore();
+    render();
+    updateTestScore();
+    newQuizQuestion();
+
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {
+          // The app remains usable online even if offline caching is unavailable.
+        });
+      });
+    }
+  </script>
+</body>
+</html>
