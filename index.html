@@ -106,7 +106,7 @@
       font-weight: 700;
     }
 
-    .study-range select:focus-visible, .add-word-form input:focus-visible {
+    .study-range select:focus-visible, .add-word-form input:focus-visible, .add-word-form select:focus-visible, .folder-form input:focus-visible {
       outline: 3px solid rgba(54, 95, 219, .3);
       outline-offset: 2px;
     }
@@ -238,11 +238,11 @@
 
     .add-word-form {
       display: grid;
-      grid-template-columns: 1fr 1.35fr auto;
+      grid-template-columns: minmax(0, .9fr) minmax(0, 1.25fr) minmax(0, 1fr) auto;
       gap: 8px;
     }
 
-    .add-word-form input {
+    .add-word-form input, .add-word-form select {
       min-width: 0;
       min-height: 44px;
       padding: 10px 12px;
@@ -258,6 +258,115 @@
     .add-word-feedback { min-height: 1.35em; margin: 10px 2px 0; color: var(--muted); font-size: .9rem; font-weight: 700; }
     .add-word-feedback.success { color: #137234; }
     .add-word-feedback.error { color: #a12630; }
+
+    .folder-manager {
+      margin-top: 20px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f8faff;
+    }
+
+    .folder-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .folder-heading h3 { margin: 0; font-size: 1rem; }
+    .folder-heading span { color: var(--muted); font-size: .86rem; font-weight: 700; }
+    .folder-description { margin: 7px 0 12px; color: var(--muted); font-size: .88rem; }
+
+    .folder-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .folder-form input {
+      min-width: 0;
+      min-height: 42px;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .folder-form button { min-height: 42px; }
+    .folder-feedback { min-height: 1.3em; margin: 8px 2px 0; color: var(--muted); font-size: .86rem; font-weight: 700; }
+    .folder-feedback.success { color: #137234; }
+    .folder-feedback.error { color: #a12630; }
+
+    .folder-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .folder-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 8px 6px 10px;
+      border: 1px solid #cbd7f8;
+      border-radius: 999px;
+      background: white;
+      color: #294a9a;
+      font-size: .85rem;
+      font-weight: 700;
+    }
+
+    .folder-chip button {
+      width: 24px;
+      min-height: 24px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 50% !important;
+      background: #e8edfd !important;
+      color: #294a9a !important;
+      font-size: 1rem !important;
+      line-height: 1;
+    }
+
+    .folder-empty { color: var(--muted); font-size: .86rem; }
+
+    .word-list-panel {
+      margin-top: 22px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f8faff;
+    }
+
+    .word-list-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .word-list-heading h2 { margin: 0; font-size: 1.35rem; }
+    .word-list-heading button { min-height: 38px !important; padding: 7px 10px !important; font-size: .86rem !important; }
+    .word-list-meta { margin: 7px 0 12px; color: var(--muted); font-size: .9rem; }
+    .word-list-scroll { max-height: 390px; overflow: auto; border-top: 1px solid var(--line); }
+    .word-list { margin: 0; padding: 0; list-style: none; }
+
+    .word-list-item {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 10px;
+      padding: 12px 2px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .word-list-number { color: var(--muted); font-size: .82rem; font-weight: 750; }
+    .word-list-term { display: block; overflow-wrap: anywhere; font-size: 1rem; }
+    .word-list-meaning { display: block; margin-top: 3px; overflow-wrap: anywhere; color: var(--muted); font-size: .93rem; }
+    .word-list-empty { padding: 18px 0; color: var(--muted); text-align: center; }
 
     .sr-only {
       position: absolute;
@@ -346,6 +455,11 @@
 
     .empty[hidden] { display: none; }
 
+    @media (max-width: 590px) {
+      .add-word-form { grid-template-columns: 1fr 1fr; }
+      .add-word-form button { grid-column: 1 / -1; }
+    }
+
     @media (max-width: 420px) {
       body { padding: 16px 10px; }
       .app { padding: 20px 16px; border-radius: 18px; }
@@ -354,6 +468,7 @@
       .choices { grid-template-columns: 1fr; }
       .study-range { grid-template-columns: 1fr; gap: 6px; }
       .add-word-form { grid-template-columns: 1fr; }
+      .folder-form { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -375,6 +490,7 @@
         <option value="101-150">101–150</option>
         <option value="151-205">151–205</option>
         <option value="custom" disabled>내가 추가한 단어 (0개)</option>
+        <optgroup id="folder-options" label="내 폴더" disabled></optgroup>
       </select>
     </div>
 
@@ -411,7 +527,19 @@
       <button id="random" type="button">무작위 카드</button>
       <button id="shuffle" type="button">순서 섞기</button>
       <button id="reset-search" type="button">검색 초기화</button>
+      <button id="show-word-list" type="button">단어 목록 보기</button>
     </div>
+
+    <section id="word-list-panel" class="word-list-panel" aria-labelledby="word-list-title" hidden>
+      <div class="word-list-heading">
+        <h2 id="word-list-title">단어 목록</h2>
+        <button id="close-word-list" type="button">닫기</button>
+      </div>
+      <p id="word-list-meta" class="word-list-meta"></p>
+      <div class="word-list-scroll">
+        <ol id="word-list" class="word-list"></ol>
+      </div>
+    </section>
 
     <section class="custom-words" aria-labelledby="custom-words-title">
       <div class="custom-heading">
@@ -424,9 +552,28 @@
         <input id="custom-english" type="text" placeholder="영어 단어 또는 표현" autocomplete="off" required>
         <label class="sr-only" for="custom-korean">한글 뜻</label>
         <input id="custom-korean" type="text" placeholder="한글 뜻" autocomplete="off" required>
+        <label class="sr-only" for="custom-folder">저장할 폴더</label>
+        <select id="custom-folder" aria-label="저장할 폴더">
+          <option value="">폴더 없이 추가</option>
+        </select>
         <button type="submit">추가</button>
       </form>
       <p id="add-word-feedback" class="add-word-feedback" role="status" aria-live="polite"></p>
+
+      <div class="folder-manager">
+        <div class="folder-heading">
+          <h3>내 폴더 만들기</h3>
+          <span id="folder-count">0개</span>
+        </div>
+        <p class="folder-description">예: 숙어, 헷갈리는 단어, 시험 범위</p>
+        <form id="create-folder-form" class="folder-form">
+          <label class="sr-only" for="folder-name">새 폴더 이름</label>
+          <input id="folder-name" type="text" placeholder="새 폴더 이름" autocomplete="off" required>
+          <button type="submit">폴더 만들기</button>
+        </form>
+        <p id="folder-feedback" class="folder-feedback" role="status" aria-live="polite"></p>
+        <div id="folder-list" class="folder-list"></div>
+      </div>
     </section>
 
     <section class="quiz" aria-labelledby="quiz-title">
@@ -664,7 +811,9 @@
     ];
 
     const customCardsStorageKey = "english-flashcards-custom-cards-v1";
+    const foldersStorageKey = "english-flashcards-folders-v1";
     let customCards = loadCustomCards();
+    let folders = loadFolders();
     let selectedGroup = "all";
     let cards = [];
     let index = 0;
@@ -685,11 +834,23 @@
     const search = document.getElementById("search");
     const resetSearch = document.getElementById("reset-search");
     const groupFilter = document.getElementById("group-filter");
+    const folderOptions = document.getElementById("folder-options");
     const addWordForm = document.getElementById("add-word-form");
     const customEnglish = document.getElementById("custom-english");
     const customKorean = document.getElementById("custom-korean");
+    const customFolder = document.getElementById("custom-folder");
     const customWordCount = document.getElementById("custom-word-count");
     const addWordFeedback = document.getElementById("add-word-feedback");
+    const createFolderForm = document.getElementById("create-folder-form");
+    const folderName = document.getElementById("folder-name");
+    const folderCount = document.getElementById("folder-count");
+    const folderFeedback = document.getElementById("folder-feedback");
+    const folderList = document.getElementById("folder-list");
+    const showWordList = document.getElementById("show-word-list");
+    const closeWordList = document.getElementById("close-word-list");
+    const wordListPanel = document.getElementById("word-list-panel");
+    const wordListMeta = document.getElementById("word-list-meta");
+    const wordList = document.getElementById("word-list");
     const modeEnKo = document.getElementById("mode-en-ko");
     const modeKoEn = document.getElementById("mode-ko-en");
     const resetTest = document.getElementById("reset-test");
@@ -709,15 +870,55 @@
     const scoreStorageKey = "english-flashcards-score-v1";
     const installTipStorageKey = "english-flashcards-install-tip-dismissed-v1";
 
+    function createId(prefix) {
+      return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
     function loadCustomCards() {
       try {
         const savedCards = JSON.parse(localStorage.getItem(customCardsStorageKey));
         if (!Array.isArray(savedCards)) return [];
 
-        return savedCards
-          .filter((card) => Array.isArray(card) && typeof card[0] === "string" && typeof card[1] === "string")
-          .map(([english, korean]) => [english.trim(), korean.trim()])
-          .filter(([english, korean]) => english && korean);
+        return savedCards.map((card) => {
+          if (Array.isArray(card) && typeof card[0] === "string" && typeof card[1] === "string") {
+            const english = card[0].trim();
+            const korean = card[1].trim();
+            return english && korean ? { id: createId("card"), english, korean, folderId: null } : null;
+          }
+
+          if (card && typeof card === "object" && typeof card.english === "string" && typeof card.korean === "string") {
+            const english = card.english.trim();
+            const korean = card.korean.trim();
+            if (!english || !korean) return null;
+            return {
+              id: typeof card.id === "string" && card.id ? card.id : createId("card"),
+              english,
+              korean,
+              folderId: typeof card.folderId === "string" && card.folderId ? card.folderId : null
+            };
+          }
+
+          return null;
+        }).filter(Boolean);
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function loadFolders() {
+      try {
+        const savedFolders = JSON.parse(localStorage.getItem(foldersStorageKey));
+        if (!Array.isArray(savedFolders)) return [];
+
+        return savedFolders.map((folder) => {
+          if (!folder || typeof folder.name !== "string") return null;
+          const name = folder.name.trim();
+          if (!name) return null;
+          return {
+            id: typeof folder.id === "string" && folder.id ? folder.id : createId("folder"),
+            name
+          };
+        }).filter(Boolean);
       } catch (_) {
         return [];
       }
@@ -732,14 +933,42 @@
       }
     }
 
+    function saveFolders() {
+      try {
+        localStorage.setItem(foldersStorageKey, JSON.stringify(folders));
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function getCustomDeck() {
+      return customCards.map(({ english, korean }) => [english, korean]);
+    }
+
+    function getAllDeck() {
+      return [...allCards, ...getCustomDeck()];
+    }
+
+    function getFolderById(folderId) {
+      return folders.find((folder) => folder.id === folderId);
+    }
+
     function getSelectedDeck() {
       switch (selectedGroup) {
         case "1-50": return allCards.slice(0, 50);
         case "51-100": return allCards.slice(50, 100);
         case "101-150": return allCards.slice(100, 150);
         case "151-205": return allCards.slice(150, 205);
-        case "custom": return [...customCards];
-        default: return [...allCards, ...customCards];
+        case "custom": return getCustomDeck();
+        default:
+          if (selectedGroup.startsWith("folder:")) {
+            const folderId = selectedGroup.slice("folder:".length);
+            return customCards
+              .filter((card) => card.folderId === folderId)
+              .map(({ english, korean }) => [english, korean]);
+          }
+          return getAllDeck();
       }
     }
 
@@ -752,17 +981,137 @@
         "151-205": "151–205",
         "custom": "내가 추가한 단어"
       };
-      return selectedGroup === "all" ? `전체 ${count}개` : `${labels[selectedGroup]} ${count}개`;
+
+      if (selectedGroup === "all") return `전체 ${count}개`;
+      if (selectedGroup.startsWith("folder:")) {
+        const folder = getFolderById(selectedGroup.slice("folder:".length));
+        return `${folder?.name || "내 폴더"} ${count}개`;
+      }
+      return `${labels[selectedGroup]} ${count}개`;
+    }
+
+    function updateCustomFolderOptions() {
+      const selectedFolderId = customFolder.value;
+      customFolder.innerHTML = "";
+
+      const noFolderOption = document.createElement("option");
+      noFolderOption.value = "";
+      noFolderOption.textContent = "폴더 없이 추가";
+      customFolder.appendChild(noFolderOption);
+
+      folders.forEach((folder) => {
+        const option = document.createElement("option");
+        option.value = folder.id;
+        option.textContent = folder.name;
+        customFolder.appendChild(option);
+      });
+
+      customFolder.value = folders.some((folder) => folder.id === selectedFolderId) ? selectedFolderId : "";
+    }
+
+    function renderFolderList() {
+      folderList.innerHTML = "";
+      folderCount.textContent = `${folders.length}개`;
+
+      if (!folders.length) {
+        const empty = document.createElement("span");
+        empty.className = "folder-empty";
+        empty.textContent = "아직 만든 폴더가 없습니다.";
+        folderList.appendChild(empty);
+        return;
+      }
+
+      folders.forEach((folder) => {
+        const chip = document.createElement("div");
+        chip.className = "folder-chip";
+
+        const label = document.createElement("span");
+        const wordCount = customCards.filter((card) => card.folderId === folder.id).length;
+        label.textContent = `${folder.name} (${wordCount})`;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.textContent = "×";
+        deleteButton.setAttribute("aria-label", `${folder.name} 폴더 삭제`);
+        deleteButton.addEventListener("click", () => deleteFolder(folder.id));
+
+        chip.append(label, deleteButton);
+        folderList.appendChild(chip);
+      });
     }
 
     function updateGroupControls() {
       groupFilter.querySelector('option[value="all"]').textContent = `전체 보기 (${allCards.length + customCards.length}개)`;
       groupFilter.querySelector('option[value="custom"]').textContent = `내가 추가한 단어 (${customCards.length}개)`;
       groupFilter.querySelector('option[value="custom"]').disabled = customCards.length === 0;
-      customWordCount.textContent = `추가한 단어 ${customCards.length}개`;
+
+      folderOptions.innerHTML = "";
+      folders.forEach((folder) => {
+        const option = document.createElement("option");
+        const wordCount = customCards.filter((card) => card.folderId === folder.id).length;
+        option.value = `folder:${folder.id}`;
+        option.textContent = `${folder.name} (${wordCount}개)`;
+        folderOptions.appendChild(option);
+      });
+      folderOptions.disabled = folders.length === 0;
 
       if (selectedGroup === "custom" && customCards.length === 0) selectedGroup = "all";
+      if (selectedGroup.startsWith("folder:") && !getFolderById(selectedGroup.slice("folder:".length))) selectedGroup = "all";
+
+      customWordCount.textContent = `추가한 단어 ${customCards.length}개`;
       groupFilter.value = selectedGroup;
+      updateCustomFolderOptions();
+      renderFolderList();
+    }
+
+    function renderWordList() {
+      wordList.innerHTML = "";
+      wordListMeta.textContent = search.value.trim() ? `검색 결과 ${cards.length}개 · ${getGroupLabel()}` : getGroupLabel();
+
+      if (!cards.length) {
+        const empty = document.createElement("li");
+        empty.className = "word-list-empty";
+        empty.textContent = "표시할 단어가 없습니다.";
+        wordList.appendChild(empty);
+        return;
+      }
+
+      cards.forEach(([english, korean], position) => {
+        const item = document.createElement("li");
+        item.className = "word-list-item";
+
+        const number = document.createElement("span");
+        number.className = "word-list-number";
+        number.textContent = position + 1;
+
+        const content = document.createElement("span");
+        const term = document.createElement("strong");
+        term.className = "word-list-term";
+        term.textContent = english;
+        const definition = document.createElement("span");
+        definition.className = "word-list-meaning";
+        definition.textContent = korean;
+
+        content.append(term, definition);
+        item.append(number, content);
+        wordList.appendChild(item);
+      });
+    }
+
+    function toggleWordList() {
+      const opening = wordListPanel.hidden;
+      wordListPanel.hidden = !opening;
+      showWordList.textContent = opening ? "단어 목록 닫기" : "단어 목록 보기";
+      if (opening) {
+        renderWordList();
+        wordListPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function closeWordListPanel() {
+      wordListPanel.hidden = true;
+      showWordList.textContent = "단어 목록 보기";
+      showWordList.focus();
     }
 
     function applyActiveFilter() {
@@ -774,6 +1123,7 @@
       revealed = false;
       render();
       newQuizQuestion();
+      if (!wordListPanel.hidden) renderWordList();
     }
 
     function render() {
@@ -885,7 +1235,7 @@
       const answerIndex = testMode === "en-ko" ? 1 : 0;
       const answer = answerIndex === 0 ? english : korean;
       const options = new Set([answer]);
-      const optionSource = getSelectedDeck().length >= 4 ? getSelectedDeck() : [...allCards, ...customCards];
+      const optionSource = getSelectedDeck().length >= 4 ? getSelectedDeck() : getAllDeck();
 
       while (options.size < 4) {
         const candidate = optionSource[Math.floor(Math.random() * optionSource.length)][answerIndex];
@@ -956,32 +1306,91 @@
       addWordFeedback.className = `add-word-feedback ${type}`;
     }
 
+    function setFolderFeedback(message, type = "") {
+      folderFeedback.textContent = message;
+      folderFeedback.className = `folder-feedback ${type}`;
+    }
+
     function addCustomWord(event) {
       event.preventDefault();
       const english = customEnglish.value.trim();
       const korean = customKorean.value.trim();
+      const folderId = customFolder.value || null;
 
       if (!english || !korean) {
         setAddWordFeedback("영어와 한글 뜻을 모두 입력해 주세요.", "error");
         return;
       }
 
-      const isDuplicate = customCards.some(([savedEnglish, savedKorean]) =>
-        savedEnglish.toLowerCase() === english.toLowerCase() && savedKorean === korean
+      const isDuplicate = customCards.some((card) =>
+        card.english.toLowerCase() === english.toLowerCase() && card.korean === korean && card.folderId === folderId
       );
       if (isDuplicate) {
-        setAddWordFeedback("이미 추가한 단어입니다.", "error");
+        setAddWordFeedback("이 폴더에 이미 추가한 단어입니다.", "error");
         return;
       }
 
-      customCards = [...customCards, [english, korean]];
+      const folder = folderId ? getFolderById(folderId) : null;
+      customCards = [...customCards, { id: createId("card"), english, korean, folderId }];
       const saved = saveCustomCards();
       updateGroupControls();
       applyActiveFilter();
-      addWordForm.reset();
+      customEnglish.value = "";
+      customKorean.value = "";
+      customFolder.value = folderId || "";
       customEnglish.focus();
       setAddWordFeedback(
-        saved ? `“${english}”을(를) 추가했습니다.` : `“${english}”을(를) 추가했지만 이 기기에 저장하지 못했습니다.`,
+        saved
+          ? `“${english}”을(를)${folder ? ` “${folder.name}” 폴더에` : ""} 추가했습니다.`
+          : `“${english}”을(를) 추가했지만 이 기기에 저장하지 못했습니다.`,
+        saved ? "success" : "error"
+      );
+    }
+
+    function createFolder(event) {
+      event.preventDefault();
+      const name = folderName.value.trim();
+
+      if (!name) {
+        setFolderFeedback("폴더 이름을 입력해 주세요.", "error");
+        return;
+      }
+
+      if (folders.some((folder) => folder.name.toLowerCase() === name.toLowerCase())) {
+        setFolderFeedback("같은 이름의 폴더가 이미 있습니다.", "error");
+        return;
+      }
+
+      const folder = { id: createId("folder"), name };
+      folders = [...folders, folder];
+      const saved = saveFolders();
+      updateGroupControls();
+      customFolder.value = folder.id;
+      folderName.value = "";
+      setFolderFeedback(
+        saved ? `“${name}” 폴더를 만들었습니다. 이제 단어를 추가해 보세요.` : `“${name}” 폴더를 만들었지만 이 기기에 저장하지 못했습니다.`,
+        saved ? "success" : "error"
+      );
+    }
+
+    function deleteFolder(folderId) {
+      const folder = getFolderById(folderId);
+      if (!folder) return;
+
+      const wordCount = customCards.filter((card) => card.folderId === folderId).length;
+      const message = wordCount
+        ? `“${folder.name}” 폴더를 삭제할까요? 안의 ${wordCount}개 단어는 삭제되지 않고 “내가 추가한 단어”에 남습니다.`
+        : `“${folder.name}” 폴더를 삭제할까요?`;
+      if (!window.confirm(message)) return;
+
+      folders = folders.filter((item) => item.id !== folderId);
+      customCards = customCards.map((card) => card.folderId === folderId ? { ...card, folderId: null } : card);
+      const saved = saveFolders() && saveCustomCards();
+      if (selectedGroup === `folder:${folderId}`) selectedGroup = "all";
+      updateGroupControls();
+      applyActiveFilter();
+      setFolderFeedback(
+        saved ? `“${folder.name}” 폴더를 삭제했습니다.` : `폴더는 삭제했지만 이 기기에 저장하지 못했습니다.`,
         saved ? "success" : "error"
       );
     }
@@ -1004,6 +1413,9 @@
       applyActiveFilter();
     });
     addWordForm.addEventListener("submit", addCustomWord);
+    createFolderForm.addEventListener("submit", createFolder);
+    showWordList.addEventListener("click", toggleWordList);
+    closeWordList.addEventListener("click", closeWordListPanel);
     modeEnKo.addEventListener("click", () => changeTestMode("en-ko"));
     modeKoEn.addEventListener("click", () => changeTestMode("ko-en"));
     resetTest.addEventListener("click", () => {
@@ -1031,7 +1443,7 @@
     });
 
     document.addEventListener("keydown", (event) => {
-      if (["INPUT", "BUTTON"].includes(event.target.tagName) || event.target.isContentEditable) return;
+      if (["INPUT", "BUTTON", "SELECT"].includes(event.target.tagName) || event.target.isContentEditable) return;
       if (event.key === "ArrowLeft") move(-1);
       if (event.key === "ArrowRight") move(1);
       if (event.key === " " || event.key === "Enter") {
