@@ -1,7 +1,7 @@
 {
-  "name": "영단어 플래시카드",
-  "short_name": "영단어 카드",
-  "description": "205개 영단어 플래시카드와 4지선다 테스트",
+  "name": "플래시카드",
+  "short_name": "플래시카드",
+  "description": "EBS 혼동어휘, 하이스트, 스페인어 플래시카드와 4지선다 테스트",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",

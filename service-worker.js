@@ -1,4 +1,4 @@
-const CACHE_NAME = "english-flashcards-v3";
+const CACHE_NAME = "english-flashcards-v4";
 const APP_SHELL = [
   "./",
   "./index.html",

@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#365fdb">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="영단어 카드">
-  <title>영단어 플래시카드</title>
+  <meta name="apple-mobile-web-app-title" content="플래시카드">
+  <title>플래시카드</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/icon-180.png">
   <style>
@@ -238,7 +238,7 @@
 
     .add-word-form {
       display: grid;
-      grid-template-columns: minmax(0, .9fr) minmax(0, 1.25fr) minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
       gap: 8px;
     }
 
@@ -253,7 +253,7 @@
       font: inherit;
     }
 
-    .add-word-form button { min-height: 44px; background: var(--blue); border-color: var(--blue); color: white; }
+    .add-word-form button { min-height: 44px; grid-column: 1 / -1; background: var(--blue); border-color: var(--blue); color: white; }
     .add-word-form button:hover { background: var(--blue-dark); }
     .add-word-feedback { min-height: 1.35em; margin: 10px 2px 0; color: var(--muted); font-size: .9rem; font-weight: 700; }
     .add-word-feedback.success { color: #137234; }
@@ -474,7 +474,7 @@
 </head>
 <body>
   <main class="app">
-    <h1>영단어 플래시카드</h1>
+    <h1>플래시카드</h1>
     <p class="subtitle">카드를 클릭하거나 <strong>정답 보기</strong>를 누르면 뜻이 보입니다.</p>
     <div id="install-tip" class="install-tip" role="status">
       <span>Safari의 공유 버튼에서 <strong>홈 화면에 추가</strong>를 선택하면 앱처럼 사용할 수 있어요.</span>
@@ -485,10 +485,19 @@
       <label for="group-filter">학습 범위</label>
       <select id="group-filter">
         <option value="all">전체 보기 (205개)</option>
-        <option value="1-50">1–50</option>
-        <option value="51-100">51–100</option>
-        <option value="101-150">101–150</option>
-        <option value="151-205">151–205</option>
+        <optgroup label="EBS 혼동어휘">
+          <option value="ebs-all">EBS 전체 (205개)</option>
+          <option value="ebs-1">1–50</option>
+          <option value="ebs-2">51–100</option>
+          <option value="ebs-3">101–150</option>
+          <option value="ebs-4">151–205</option>
+        </optgroup>
+        <optgroup label="하이스트">
+          <option value="high">하이스트 (0개)</option>
+        </optgroup>
+        <optgroup label="스페인어">
+          <option value="spanish">스페인어 (0개)</option>
+        </optgroup>
         <option value="custom" disabled>내가 추가한 단어 (0개)</option>
         <optgroup id="folder-options" label="내 폴더" disabled></optgroup>
       </select>
@@ -546,12 +555,18 @@
         <h2 id="custom-words-title">내 단어 추가</h2>
         <span id="custom-word-count" class="custom-count">추가한 단어 0개</span>
       </div>
-      <p class="custom-description">여기에 추가한 단어는 이 기기에 저장되며, 전체 보기와 내가 추가한 단어에서 확인할 수 있어요.</p>
+      <p class="custom-description">여기에 추가한 단어는 이 기기에 저장되며, 하이스트·스페인어·내 폴더에 분류할 수 있어요.</p>
       <form id="add-word-form" class="add-word-form">
         <label class="sr-only" for="custom-english">영어 단어 또는 표현</label>
         <input id="custom-english" type="text" placeholder="영어 단어 또는 표현" autocomplete="off" required>
         <label class="sr-only" for="custom-korean">한글 뜻</label>
         <input id="custom-korean" type="text" placeholder="한글 뜻" autocomplete="off" required>
+        <label class="sr-only" for="custom-category">분류</label>
+        <select id="custom-category" aria-label="분류">
+          <option value="custom">내가 추가한 단어</option>
+          <option value="high">하이스트</option>
+          <option value="spanish">스페인어</option>
+        </select>
         <label class="sr-only" for="custom-folder">저장할 폴더</label>
         <select id="custom-folder" aria-label="저장할 폴더">
           <option value="">폴더 없이 추가</option>
@@ -581,11 +596,12 @@
         <h2 id="quiz-title">테스트</h2>
         <span id="test-score">정답 0 / 0</span>
       </div>
-      <p class="quiz-description">알맞은 뜻 또는 영어 표현을 골라 보세요.</p>
+      <p id="quiz-description" class="quiz-description">알맞은 뜻 또는 영어 표현을 골라 보세요.</p>
 
       <div class="mode-controls" role="group" aria-label="테스트 방향">
         <button id="mode-en-ko" class="is-selected" type="button">영어 → 한글</button>
         <button id="mode-ko-en" type="button">한글 → 영어</button>
+        <button id="retry-wrong" type="button" disabled>오답 재시험 (0)</button>
         <button id="reset-test" type="button">점수 초기화</button>
       </div>
 
@@ -812,8 +828,10 @@
 
     const customCardsStorageKey = "english-flashcards-custom-cards-v1";
     const foldersStorageKey = "english-flashcards-folders-v1";
+    const wrongAnswersStorageKey = "english-flashcards-wrong-answers-v1";
     let customCards = loadCustomCards();
     let folders = loadFolders();
+    let wrongAnswers = loadWrongAnswers();
     let selectedGroup = "all";
     let cards = [];
     let index = 0;
@@ -838,6 +856,7 @@
     const addWordForm = document.getElementById("add-word-form");
     const customEnglish = document.getElementById("custom-english");
     const customKorean = document.getElementById("custom-korean");
+    const customCategory = document.getElementById("custom-category");
     const customFolder = document.getElementById("custom-folder");
     const customWordCount = document.getElementById("custom-word-count");
     const addWordFeedback = document.getElementById("add-word-feedback");
@@ -853,7 +872,9 @@
     const wordList = document.getElementById("word-list");
     const modeEnKo = document.getElementById("mode-en-ko");
     const modeKoEn = document.getElementById("mode-ko-en");
+    const retryWrong = document.getElementById("retry-wrong");
     const resetTest = document.getElementById("reset-test");
+    const quizDescription = document.getElementById("quiz-description");
     const quizLabel = document.getElementById("quiz-label");
     const quizQuestion = document.getElementById("quiz-question");
     const choices = document.getElementById("choices");
@@ -867,6 +888,7 @@
     let correctAnswers = 0;
     let answeredQuestions = 0;
     let quiz = null;
+    let quizScope = "normal";
     const scoreStorageKey = "english-flashcards-score-v1";
     const installTipStorageKey = "english-flashcards-install-tip-dismissed-v1";
 
@@ -883,7 +905,7 @@
           if (Array.isArray(card) && typeof card[0] === "string" && typeof card[1] === "string") {
             const english = card[0].trim();
             const korean = card[1].trim();
-            return english && korean ? { id: createId("card"), english, korean, folderId: null } : null;
+            return english && korean ? { id: createId("card"), english, korean, collection: "custom", folderId: null } : null;
           }
 
           if (card && typeof card === "object" && typeof card.english === "string" && typeof card.korean === "string") {
@@ -894,6 +916,7 @@
               id: typeof card.id === "string" && card.id ? card.id : createId("card"),
               english,
               korean,
+              collection: ["high", "spanish"].includes(card.collection) ? card.collection : "custom",
               folderId: typeof card.folderId === "string" && card.folderId ? card.folderId : null
             };
           }
@@ -924,6 +947,30 @@
       }
     }
 
+    function cardKey([english, korean]) {
+      return `${english}\u0000${korean}`;
+    }
+
+    function loadWrongAnswers() {
+      try {
+        const savedCards = JSON.parse(localStorage.getItem(wrongAnswersStorageKey));
+        if (!Array.isArray(savedCards)) return [];
+
+        const unique = new Set();
+        return savedCards
+          .map((card) => Array.isArray(card) ? card : [card?.english, card?.korean])
+          .filter(([english, korean]) => typeof english === "string" && typeof korean === "string" && english && korean)
+          .filter((card) => {
+            const key = cardKey(card);
+            if (unique.has(key)) return false;
+            unique.add(key);
+            return true;
+          });
+      } catch (_) {
+        return [];
+      }
+    }
+
     function saveCustomCards() {
       try {
         localStorage.setItem(customCardsStorageKey, JSON.stringify(customCards));
@@ -942,8 +989,31 @@
       }
     }
 
+    function saveWrongAnswers() {
+      try {
+        localStorage.setItem(wrongAnswersStorageKey, JSON.stringify(wrongAnswers));
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
     function getCustomDeck() {
       return customCards.map(({ english, korean }) => [english, korean]);
+    }
+
+    function getCollectionDeck(collection) {
+      return customCards
+        .filter((card) => card.collection === collection)
+        .map(({ english, korean }) => [english, korean]);
+    }
+
+    function getCollectionLabel(collection) {
+      return {
+        custom: "내가 추가한 단어",
+        high: "하이스트",
+        spanish: "스페인어"
+      }[collection] || "내가 추가한 단어";
     }
 
     function getAllDeck() {
@@ -956,10 +1026,13 @@
 
     function getSelectedDeck() {
       switch (selectedGroup) {
-        case "1-50": return allCards.slice(0, 50);
-        case "51-100": return allCards.slice(50, 100);
-        case "101-150": return allCards.slice(100, 150);
-        case "151-205": return allCards.slice(150, 205);
+        case "ebs-all": return [...allCards];
+        case "ebs-1": return allCards.slice(0, 50);
+        case "ebs-2": return allCards.slice(50, 100);
+        case "ebs-3": return allCards.slice(100, 150);
+        case "ebs-4": return allCards.slice(150, 205);
+        case "high": return getCollectionDeck("high");
+        case "spanish": return getCollectionDeck("spanish");
         case "custom": return getCustomDeck();
         default:
           if (selectedGroup.startsWith("folder:")) {
@@ -975,10 +1048,13 @@
     function getGroupLabel() {
       const count = getSelectedDeck().length;
       const labels = {
-        "1-50": "1–50",
-        "51-100": "51–100",
-        "101-150": "101–150",
-        "151-205": "151–205",
+        "ebs-all": "EBS 혼동어휘",
+        "ebs-1": "EBS 혼동어휘 · 1–50",
+        "ebs-2": "EBS 혼동어휘 · 51–100",
+        "ebs-3": "EBS 혼동어휘 · 101–150",
+        "ebs-4": "EBS 혼동어휘 · 151–205",
+        "high": "하이스트",
+        "spanish": "스페인어",
         "custom": "내가 추가한 단어"
       };
 
@@ -1042,6 +1118,13 @@
 
     function updateGroupControls() {
       groupFilter.querySelector('option[value="all"]').textContent = `전체 보기 (${allCards.length + customCards.length}개)`;
+      groupFilter.querySelector('option[value="ebs-all"]').textContent = `EBS 전체 (${allCards.length}개)`;
+      groupFilter.querySelector('option[value="ebs-1"]').textContent = `1–50 (50개)`;
+      groupFilter.querySelector('option[value="ebs-2"]').textContent = `51–100 (50개)`;
+      groupFilter.querySelector('option[value="ebs-3"]').textContent = `101–150 (50개)`;
+      groupFilter.querySelector('option[value="ebs-4"]').textContent = `151–205 (55개)`;
+      groupFilter.querySelector('option[value="high"]').textContent = `하이스트 (${getCollectionDeck("high").length}개)`;
+      groupFilter.querySelector('option[value="spanish"]').textContent = `스페인어 (${getCollectionDeck("spanish").length}개)`;
       groupFilter.querySelector('option[value="custom"]').textContent = `내가 추가한 단어 (${customCards.length}개)`;
       groupFilter.querySelector('option[value="custom"]').disabled = customCards.length === 0;
 
@@ -1122,6 +1205,7 @@
       index = 0;
       revealed = false;
       render();
+      updateWrongRetryButton();
       newQuizQuestion();
       if (!wordListPanel.hidden) renderWordList();
     }
@@ -1207,6 +1291,63 @@
       }
     }
 
+    function getCurrentWrongCards() {
+      const wrongKeys = new Set(wrongAnswers.map(cardKey));
+      return cards.filter((card) => wrongKeys.has(cardKey(card)));
+    }
+
+    function addWrongAnswer(card) {
+      const key = cardKey(card);
+      if (!wrongAnswers.some((savedCard) => cardKey(savedCard) === key)) {
+        wrongAnswers = [...wrongAnswers, [...card]];
+        saveWrongAnswers();
+      }
+    }
+
+    function removeWrongAnswer(card) {
+      const key = cardKey(card);
+      const remaining = wrongAnswers.filter((savedCard) => cardKey(savedCard) !== key);
+      if (remaining.length !== wrongAnswers.length) {
+        wrongAnswers = remaining;
+        saveWrongAnswers();
+      }
+    }
+
+    function updateWrongRetryButton() {
+      const wrongCount = getCurrentWrongCards().length;
+      if (quizScope === "wrong") {
+        retryWrong.textContent = "일반 테스트로 돌아가기";
+        retryWrong.disabled = false;
+        quizDescription.textContent = "현재 학습 범위에서 틀린 문제만 다시 풉니다.";
+      } else {
+        retryWrong.textContent = `오답 재시험 (${wrongCount})`;
+        retryWrong.disabled = wrongCount === 0;
+        quizDescription.textContent = "알맞은 뜻 또는 영어 표현을 골라 보세요.";
+      }
+    }
+
+    function toggleWrongRetry() {
+      if (quizScope === "wrong") {
+        quizScope = "normal";
+        updateWrongRetryButton();
+        newQuizQuestion();
+        return;
+      }
+
+      if (!getCurrentWrongCards().length) {
+        quizFeedback.textContent = "현재 학습 범위에 재시험할 오답이 없습니다.";
+        quizFeedback.className = "quiz-feedback";
+        return;
+      }
+
+      quizScope = "wrong";
+      correctAnswers = 0;
+      answeredQuestions = 0;
+      updateTestScore();
+      updateWrongRetryButton();
+      newQuizQuestion();
+    }
+
     function setupInstallTip() {
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
       try {
@@ -1219,18 +1360,22 @@
     }
 
     function newQuizQuestion() {
-      if (!cards.length) {
+      const questionCards = quizScope === "wrong" ? getCurrentWrongCards() : cards;
+
+      if (!questionCards.length) {
         quiz = null;
         quizLabel.textContent = testMode === "en-ko" ? "영어의 뜻을 고르세요" : "한글에 알맞은 영어 표현을 고르세요";
-        quizQuestion.textContent = "학습할 단어가 없습니다.";
+        quizQuestion.textContent = quizScope === "wrong" ? "재시험할 오답이 없습니다." : "학습할 단어가 없습니다.";
         choices.innerHTML = "";
-        quizFeedback.textContent = "다른 학습 범위를 선택하거나 검색어를 지워 보세요.";
+        quizFeedback.textContent = quizScope === "wrong"
+          ? "오답을 모두 맞혔어요. 일반 테스트로 돌아가거나 다른 학습 범위를 고르세요."
+          : "다른 학습 범위를 선택하거나 검색어를 지워 보세요.";
         quizFeedback.className = "quiz-feedback";
         nextQuestion.disabled = true;
         return;
       }
 
-      const [english, korean] = cards[Math.floor(Math.random() * cards.length)];
+      const [english, korean] = questionCards[Math.floor(Math.random() * questionCards.length)];
       const questionIndex = testMode === "en-ko" ? 0 : 1;
       const answerIndex = testMode === "en-ko" ? 1 : 0;
       const answer = answerIndex === 0 ? english : korean;
@@ -1244,11 +1389,13 @@
 
       quiz = {
         answer,
+        card: [english, korean],
         answered: false,
         options: mix([...options])
       };
 
-      quizLabel.textContent = testMode === "en-ko" ? "영어의 뜻을 고르세요" : "한글에 알맞은 영어 표현을 고르세요";
+      const baseLabel = testMode === "en-ko" ? "영어의 뜻을 고르세요" : "한글에 알맞은 영어 표현을 고르세요";
+      quizLabel.textContent = quizScope === "wrong" ? `오답 재시험 · ${baseLabel}` : baseLabel;
       quizQuestion.textContent = questionIndex === 0 ? english : korean;
       choices.innerHTML = "";
       quizFeedback.textContent = "정답 하나를 선택하세요.";
@@ -1278,15 +1425,18 @@
 
       if (isCorrect) {
         correctAnswers += 1;
+        removeWrongAnswer(quiz.card);
         quizFeedback.textContent = "정답입니다!";
         quizFeedback.className = "quiz-feedback correct";
       } else {
+        addWrongAnswer(quiz.card);
         selectedButton.classList.add("is-wrong");
         quizFeedback.textContent = `정답: ${quiz.answer}`;
         quizFeedback.className = "quiz-feedback wrong";
       }
 
       updateTestScore();
+      updateWrongRetryButton();
       nextQuestion.disabled = false;
       nextQuestion.focus();
     }
@@ -1315,6 +1465,7 @@
       event.preventDefault();
       const english = customEnglish.value.trim();
       const korean = customKorean.value.trim();
+      const collection = ["high", "spanish"].includes(customCategory.value) ? customCategory.value : "custom";
       const folderId = customFolder.value || null;
 
       if (!english || !korean) {
@@ -1323,7 +1474,10 @@
       }
 
       const isDuplicate = customCards.some((card) =>
-        card.english.toLowerCase() === english.toLowerCase() && card.korean === korean && card.folderId === folderId
+        card.english.toLowerCase() === english.toLowerCase() &&
+        card.korean === korean &&
+        card.collection === collection &&
+        card.folderId === folderId
       );
       if (isDuplicate) {
         setAddWordFeedback("이 폴더에 이미 추가한 단어입니다.", "error");
@@ -1331,17 +1485,19 @@
       }
 
       const folder = folderId ? getFolderById(folderId) : null;
-      customCards = [...customCards, { id: createId("card"), english, korean, folderId }];
+      customCards = [...customCards, { id: createId("card"), english, korean, collection, folderId }];
       const saved = saveCustomCards();
       updateGroupControls();
       applyActiveFilter();
       customEnglish.value = "";
       customKorean.value = "";
+      customCategory.value = collection;
       customFolder.value = folderId || "";
       customEnglish.focus();
+      const destinations = [collection === "custom" ? "" : getCollectionLabel(collection), folder?.name].filter(Boolean);
       setAddWordFeedback(
         saved
-          ? `“${english}”을(를)${folder ? ` “${folder.name}” 폴더에` : ""} 추가했습니다.`
+          ? `“${english}”을(를)${destinations.length ? ` ${destinations.join(" · ")}에` : ""} 추가했습니다.`
           : `“${english}”을(를) 추가했지만 이 기기에 저장하지 못했습니다.`,
         saved ? "success" : "error"
       );
@@ -1418,6 +1574,7 @@
     closeWordList.addEventListener("click", closeWordListPanel);
     modeEnKo.addEventListener("click", () => changeTestMode("en-ko"));
     modeKoEn.addEventListener("click", () => changeTestMode("ko-en"));
+    retryWrong.addEventListener("click", toggleWrongRetry);
     resetTest.addEventListener("click", () => {
       correctAnswers = 0;
       answeredQuestions = 0;
